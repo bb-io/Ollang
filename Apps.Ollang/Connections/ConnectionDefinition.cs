@@ -14,7 +14,12 @@ public class ConnectionDefinition : IConnectionDefinition
             AuthenticationType = ConnectionAuthenticationType.Undefined,
             ConnectionProperties = new List<ConnectionProperty>
             {
-                new(CredsNames.Token) { DisplayName = "API Token", Sensitive = true}
+                new(CredsNames.Token)
+                {
+                    DisplayName = "API token",
+                    Description = "Developer API key created in the Ollang dashboard.",
+                    Sensitive = true
+                }
             }
         }
     };

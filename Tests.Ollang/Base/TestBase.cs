@@ -20,7 +20,9 @@ public class TestBase
         Creds = config
             .GetSection("ConnectionDefinition")
             .GetChildren()
-            .Select(x => new AuthenticationCredentialsProvider(x.Key, x.Value))
+            .Select(x => new AuthenticationCredentialsProvider(
+                x.Key,
+                x.Value ?? throw new InvalidOperationException($"Missing value for connection field '{x.Key}'.")))
             .ToList();
 
         InvocationContext = new InvocationContext

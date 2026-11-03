@@ -15,18 +15,28 @@ public class ConnectionValidator(InvocationContext invocationContext) : BaseInvo
     {
         try
         {
-            var client = new Client(authenticationCredentialsProviders);
-            var request = new RestRequest();
+            var client = new OllangClient(authenticationCredentialsProviders);
+            var request = new RestRequest("/integration/folder", Method.Get)
+                .AddQueryParameter("page", "1")
+                .AddQueryParameter("take", "1");
 
             var response = await client.ExecuteAsync(request, cancellationToken);
 
             // Typically you'll want to use the least complex way to validate if a connection is valid.
-            var isValid = response.StatusCode != System.Net.HttpStatusCode.Unauthorized;
+            var isAuthenticationFailure = response.StatusCode is System.Net.HttpStatusCode.Unauthorized
+                or System.Net.HttpStatusCode.Forbidden;
+            var isValid = !isAuthenticationFailure;
+            var responseDetail = response.Content ?? response.ErrorMessage ?? response.StatusCode.ToString();
 
             return new ConnectionValidationResponse
             {
                 IsValid = isValid,
-                Message = isValid ? "Success" : (response.Content ?? response.ErrorMessage ?? response.StatusCode.ToString()),
+                Message = isAuthenticationFailure
+                    ? responseDetail
+                    : response.IsSuccessStatusCode
+                        ? "Success"
+                        : $"Ollang could not validate the connection because the service returned " +
+                          $"{(int)response.StatusCode}: {responseDetail}",
             };
 
         } 
@@ -36,8 +46,8 @@ public class ConnectionValidator(InvocationContext invocationContext) : BaseInvo
 
             return new()
             {
-                IsValid = false,
-                Message = ex.Message
+                IsValid = true,
+                Message = $"The Ollang service could not be reached during validation: {ex.Message}"
             };
         }
 

@@ -5,7 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <Product>Ollang [Beta]</Product>
-        <Description>Description</Description>
+        <Description>Create and manage Ollang localization projects and orders.</Description>
         <Version>1.0.0</Version>
         <AssemblyName>Apps.Ollang</AssemblyName>
     </PropertyGroup>
@@ -14,7 +14,7 @@
         <PackageReference Include="Blackbird.Applications.SDK.Blueprints" Version="1.0.2" />
         <PackageReference Include="Blackbird.Applications.SDK.Extensions.FileManagement" Version="1.1.0" />
         <PackageReference Include="Blackbird.Applications.Sdk.Utils" Version="1.1.0-rc.8709" />
-        <PackageReference Include="Blackbird.Filters" Version="1.3.2" />
+        <PackageReference Include="Polly" Version="8.2.0" />
     </ItemGroup>
 
     <ItemGroup>
