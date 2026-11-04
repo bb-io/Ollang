@@ -13,7 +13,7 @@ public class ActionTests : TestBase
     [TestMethod]
     public async Task Search_orders_returns_non_null_collection()
     {
-        var actions = new OrderActions(InvocationContext);
+        var actions = new OrderActions(InvocationContext, FileManager);
 
         var result = await actions.SearchOrders(new SearchOrdersRequest());
 

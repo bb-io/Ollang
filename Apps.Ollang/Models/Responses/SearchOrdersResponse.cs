@@ -5,5 +5,5 @@ namespace Apps.Ollang.Models.Responses;
 public class SearchOrdersResponse
 {
     [Display("Orders")]
-    public List<OrderResponse> Orders { get; set; } = [];
+    public List<OrderSummaryResponse> Orders { get; set; } = [];
 }

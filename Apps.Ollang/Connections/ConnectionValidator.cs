@@ -22,7 +22,6 @@ public class ConnectionValidator(InvocationContext invocationContext) : BaseInvo
 
             var response = await client.ExecuteAsync(request, cancellationToken);
 
-            // Typically you'll want to use the least complex way to validate if a connection is valid.
             var isAuthenticationFailure = response.StatusCode is System.Net.HttpStatusCode.Unauthorized
                 or System.Net.HttpStatusCode.Forbidden;
             var isValid = !isAuthenticationFailure;

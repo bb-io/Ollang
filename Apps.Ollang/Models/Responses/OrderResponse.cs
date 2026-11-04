@@ -1,11 +1,13 @@
 using Blackbird.Applications.Sdk.Common;
+using Newtonsoft.Json;
 
 namespace Apps.Ollang.Models.Responses;
 
 public class OrderResponse
 {
     [Display("Order ID")]
-    public string Id { get; set; } = string.Empty;
+    [JsonProperty("id")]
+    public string OrderId { get; set; } = string.Empty;
 
     [Display("Name")]
     public string? Name { get; set; }
@@ -27,4 +29,28 @@ public class OrderResponse
 
     [Display("Project ID")]
     public string? ProjectId { get; set; }
+
+    [Display("Rate")]
+    public decimal? Rate { get; set; }
+
+    [Display("Level")]
+    public int? Level { get; set; }
+
+    [Display("Folder ID")]
+    public string? FolderId { get; set; }
+
+    [Display("VTT URL", Description = "Signed VTT download URL when available.")]
+    public string? VttUrl { get; set; }
+
+    [Display("Documents")]
+    public List<OrderDocumentResponse> OrderDocs { get; set; } = [];
+
+    [Display("Finance")]
+    public OrderFinanceResponse? Finance { get; set; }
+
+    [Display("Latest evaluation")]
+    public QcEvaluationResponse? LatestEvaluation { get; set; }
+
+    [Display("Delivery events")]
+    public List<DeliveryEventResponse> DeliveryEvents { get; set; } = [];
 }

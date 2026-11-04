@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Net;
 using Apps.Ollang.Constants;
 using Apps.Ollang.Dtos;
+using Apps.Ollang.Models.Responses;
 using Blackbird.Applications.Sdk.Common.Authentication;
 using Blackbird.Applications.Sdk.Common.Exceptions;
 using Blackbird.Applications.Sdk.Utils.Extensions.Sdk;
@@ -75,6 +76,42 @@ public class OllangClient : BlackBirdRestClient
         {
             throw new PluginApplicationException($"Ollang returned an invalid response: {exception.Message}");
         }
+    }
+
+    public Task<ProjectIdResponse> UploadSourceFileAsync(
+        byte[] fileBytes,
+        string fileName,
+        string contentType,
+        string name,
+        string sourceLanguage,
+        string? folderId = null,
+        string? note = null,
+        string? noteTimestamp = null)
+    {
+        var request = new RestRequest("/integration/upload/direct", Method.Post)
+        {
+            AlwaysMultipartFormData = true
+        };
+        request.AddFile("file", fileBytes, fileName, contentType);
+        request.AddParameter("name", name);
+        request.AddParameter("sourceLanguage", sourceLanguage);
+
+        if (!string.IsNullOrWhiteSpace(folderId))
+            request.AddParameter("folderId", folderId);
+
+        if (!string.IsNullOrWhiteSpace(note))
+        {
+            request.AddParameter("notes", JsonConvert.SerializeObject(new[]
+            {
+                new
+                {
+                    details = note,
+                    timeStamp = noteTimestamp
+                }
+            }));
+        }
+
+        return ExecuteWithErrorHandling<ProjectIdResponse>(request);
     }
 
     protected override Exception ConfigureErrorException(RestResponse response)

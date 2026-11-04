@@ -17,16 +17,34 @@ Create a developer API key in the Ollang dashboard and use it as the **API token
 ### Orders
 
 - **Search orders** returns all orders matching optional text, type, name, date, and sorting filters. Pagination is handled automatically.
+- **Get order** returns complete order metadata, documents, finance details, the latest QC evaluation, and delivery history.
+- **Create order** creates one order per target language from either an existing project or an uploaded source file.
+- **Request human review** submits an eligible completed or delivered order for professional review.
+- **Re-run order** reprocesses an eligible AI order, optionally including its connected dependency chain.
 
 ### Files
 
 - **Upload source file** uploads a source asset and returns the ID of the newly created Ollang project. The optional folder input lets you create it inside an existing folder.
 - **Upload VTT file** attaches a `.vtt` subtitle file to an existing project.
 - **Upload reference document** uploads a glossary, guideline, or character list to either a project or a folder. Select the destination and provide the corresponding project or folder ID.
+- **Download order deliverables** downloads order documents using optional type, name, and language filters, and can include the VTT file.
+
+### Quality control
+
+- **Run QC evaluation** starts an asynchronous QC evaluation and returns its evaluation ID and processing state. An optional public HTTPS callback URL can receive the completed result.
+
+### Revisions
+
+- **Create revision** requests a correction at a specified media timestamp.
+- **Search order revisions** returns the revision history for an order.
+
+### Subtitles
+
+- **Request subtitle embedding** starts burning subtitles into an eligible completed video order.
 
 Language inputs accept BCP-47 codes such as `en`, `uk`, `fr-CA`, or `zh-Hant`.
 
-Order creation, order-dependent operations, deliverable downloads, quality control, revisions, subtitle embedding, and order status events are not included yet because they could not be verified end to end in the sandbox without AI credits and eligible completed orders.
+Actions that create or modify orders require sufficient Ollang credits and an order in the appropriate state. The order-status event is not included because Ollang currently exposes neither a global webhook subscription nor an updated-since order feed.
 
 ## Feedback
 
