@@ -181,9 +181,21 @@ public class FileActions(
                 $"Ollang deliverable download failed with status {(int)response.StatusCode}.");
         }
 
-        await using var stream = await response.Content.ReadAsStreamAsync();
         var contentType = response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream";
-        return await fileManagementClient.UploadAsync(stream, contentType, fileName);
+
+        var temporaryFilePath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        await using var temporaryFile = new FileStream(
+            temporaryFilePath,
+            FileMode.CreateNew,
+            FileAccess.ReadWrite,
+            FileShare.None,
+            bufferSize: 81920,
+            FileOptions.Asynchronous | FileOptions.DeleteOnClose);
+
+        await response.Content.CopyToAsync(temporaryFile);
+        temporaryFile.Position = 0;
+
+        return await fileManagementClient.UploadAsync(temporaryFile, contentType, fileName);
     }
 
     private static string ResolveFileName(string? documentName, string url, string documentId)
