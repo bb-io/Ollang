@@ -3,7 +3,9 @@ using Apps.Ollang.Models.Responses;
 using Apps.Ollang.Utils;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
+using Blackbird.Applications.Sdk.Common.Exceptions;
 using Blackbird.Applications.Sdk.Common.Invocation;
+using Newtonsoft.Json;
 using RestSharp;
 
 namespace Apps.Ollang.Actions;
@@ -28,6 +30,26 @@ public class SubtitleActions(InvocationContext invocationContext) : Invocable(in
                 input.WithDubbedAudio.Value ? "true" : "false");
         }
 
-        return await Client.ExecuteWithErrorHandling<SubtitleEmbeddingResponse>(request);
+        var response = await Client.ExecuteWithErrorHandling(request);
+        if (string.IsNullOrWhiteSpace(response.Content))
+        {
+            return new SubtitleEmbeddingResponse
+            {
+                Success = true,
+                Message = "Subtitle embedding request accepted.",
+                OrderId = input.OrderId
+            };
+        }
+
+        try
+        {
+            return JsonConvert.DeserializeObject<SubtitleEmbeddingResponse>(response.Content)
+                   ?? throw new PluginApplicationException("Ollang returned an invalid subtitle embedding response.");
+        }
+        catch (JsonException exception)
+        {
+            throw new PluginApplicationException(
+                $"Ollang returned an invalid subtitle embedding response: {exception.Message}");
+        }
     }
 }
