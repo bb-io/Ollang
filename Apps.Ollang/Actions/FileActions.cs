@@ -126,6 +126,7 @@ public class FileActions(
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
         var documents = outputDocuments.Where(document =>
             !string.IsNullOrWhiteSpace(document.Url) &&
+            (!IsSubtitleEmbeddedVideo(document) || input.IncludeSubtitleEmbeddedVideo == true) &&
             (documentTypes.Count == 0 || documentTypes.Contains(document.Type ?? string.Empty)) &&
             (string.IsNullOrWhiteSpace(input.NameContains) ||
              (document.Name?.Contains(input.NameContains, StringComparison.OrdinalIgnoreCase) ?? false)) &&
@@ -133,7 +134,8 @@ public class FileActions(
              string.Equals(
                  document.SourceLanguage ?? order.TargetLanguage,
                  input.Language,
-                 StringComparison.OrdinalIgnoreCase)));
+                 StringComparison.OrdinalIgnoreCase)))
+            .ToList();
 
         var deliverables = new List<DeliverableFileResponse>();
         using var httpClient = new HttpClient();
@@ -171,7 +173,10 @@ public class FileActions(
         }
 
         var embeddedVideoUrl = order.DeliveryFiles?.VideoWithBurnedInSubtitlesUrl;
-        if (input.IncludeSubtitleEmbeddedVideo == true && !string.IsNullOrWhiteSpace(embeddedVideoUrl))
+        var embeddedVideoAlreadyIncluded = documents.Any(IsSubtitleEmbeddedVideo);
+        if (input.IncludeSubtitleEmbeddedVideo == true &&
+            !embeddedVideoAlreadyIncluded &&
+            !string.IsNullOrWhiteSpace(embeddedVideoUrl))
         {
             var fallbackName = $"{SanitizeFileName(order.OrderId)}-subtitled.mp4";
             var embeddedVideoName = ResolveFileName(null, embeddedVideoUrl, fallbackName);
@@ -187,6 +192,12 @@ public class FileActions(
 
         return new DownloadOrderDeliverablesResponse { Deliverables = deliverables };
     }
+
+    private static bool IsSubtitleEmbeddedVideo(OrderDocumentResponse document) =>
+        string.Equals(
+            document.Type,
+            "created_subtitle_embedded_video",
+            StringComparison.OrdinalIgnoreCase);
 
     private async Task<Blackbird.Applications.Sdk.Common.Files.FileReference> DownloadSignedFile(
         HttpClient httpClient,
