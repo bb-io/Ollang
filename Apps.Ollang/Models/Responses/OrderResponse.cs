@@ -45,6 +45,9 @@ public class OrderResponse
     [Display("Documents")]
     public List<OrderDocumentResponse> OrderDocs { get; set; } = [];
 
+    [Display("Delivery files")]
+    public DeliveryFilesResponse? DeliveryFiles { get; set; }
+
     [Display("Finance")]
     public OrderFinanceResponse? Finance { get; set; }
 

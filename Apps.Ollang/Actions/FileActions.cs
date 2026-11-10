@@ -118,15 +118,22 @@ public class FileActions(
         var order = await Client.ExecuteWithErrorHandling<OrderResponse>(orderRequest);
         order.OrderDocs ??= [];
 
+        var outputDocuments = order.DeliveryFiles?.Outputs is { Count: > 0 }
+            ? order.DeliveryFiles.Outputs
+            : order.OrderDocs;
+
         var documentTypes = (input.DocumentTypes ?? [])
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var documents = order.OrderDocs.Where(document =>
+        var documents = outputDocuments.Where(document =>
             !string.IsNullOrWhiteSpace(document.Url) &&
             (documentTypes.Count == 0 || documentTypes.Contains(document.Type ?? string.Empty)) &&
             (string.IsNullOrWhiteSpace(input.NameContains) ||
              (document.Name?.Contains(input.NameContains, StringComparison.OrdinalIgnoreCase) ?? false)) &&
             (string.IsNullOrWhiteSpace(input.Language) ||
-             string.Equals(document.SourceLanguage, input.Language, StringComparison.OrdinalIgnoreCase)));
+             string.Equals(
+                 document.SourceLanguage ?? order.TargetLanguage,
+                 input.Language,
+                 StringComparison.OrdinalIgnoreCase)));
 
         var deliverables = new List<DeliverableFileResponse>();
         using var httpClient = new HttpClient();
@@ -142,7 +149,7 @@ public class FileActions(
                 DocumentId = document.Id,
                 Name = document.Name,
                 DocumentType = document.Type,
-                Language = document.SourceLanguage,
+                Language = document.SourceLanguage ?? order.TargetLanguage,
                 Size = document.Size
             });
         }
@@ -159,6 +166,21 @@ public class FileActions(
                 File = file,
                 Name = vttName,
                 DocumentType = "vtt",
+                Language = order.TargetLanguage
+            });
+        }
+
+        var embeddedVideoUrl = order.DeliveryFiles?.VideoWithBurnedInSubtitlesUrl;
+        if (input.IncludeSubtitleEmbeddedVideo == true && !string.IsNullOrWhiteSpace(embeddedVideoUrl))
+        {
+            var fallbackName = $"{SanitizeFileName(order.OrderId)}-subtitled.mp4";
+            var embeddedVideoName = ResolveFileName(null, embeddedVideoUrl, fallbackName);
+            var file = await DownloadSignedFile(httpClient, embeddedVideoUrl, embeddedVideoName);
+            deliverables.Add(new DeliverableFileResponse
+            {
+                File = file,
+                Name = embeddedVideoName,
+                DocumentType = "created_subtitle_embedded_video",
                 Language = order.TargetLanguage
             });
         }
