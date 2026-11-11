@@ -12,33 +12,20 @@ public class FolderDataSourceHandler(InvocationContext invocationContext)
         DataSourceContext context,
         CancellationToken cancellationToken)
     {
-        var folders = new List<FolderDto>();
-        var page = 1;
+        var request = new RestRequest("/integration/folder", Method.Get)
+            .AddQueryParameter("page", 1)
+            .AddQueryParameter("take", 30)
+            .AddQueryParameter("orderBy", "name")
+            .AddQueryParameter("orderDirection", "asc");
 
-        while (true)
-        {
-            var request = new RestRequest("/integration/folder", Method.Get)
-                .AddQueryParameter("page", page)
-                .AddQueryParameter("take", 50)
-                .AddQueryParameter("orderBy", "name")
-                .AddQueryParameter("orderDirection", "asc");
+        if (!string.IsNullOrWhiteSpace(context.SearchString))
+            request.AddQueryParameter("search", context.SearchString);
 
-            if (!string.IsNullOrWhiteSpace(context.SearchString))
-                request.AddQueryParameter("search", context.SearchString);
+        var response = await Client.ExecuteWithErrorHandling<PagedResponseDto<FolderDto>>(
+            request,
+            cancellationToken);
 
-            var response = await Client.ExecuteWithErrorHandling<PagedResponseDto<FolderDto>>(
-                request,
-                cancellationToken);
-            folders.AddRange(response.Data);
-
-            if (!response.Meta.HasNextPage)
-                break;
-
-            page++;
-        }
-
-        return folders
-            .Take(30)
+        return response.Data
             .Select(folder => new DataSourceItem(folder.Id, folder.Name));
     }
 }

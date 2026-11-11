@@ -4,6 +4,7 @@ using Apps.Ollang.Utils;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
 using Blackbird.Applications.Sdk.Common.Exceptions;
+using Blackbird.Applications.Sdk.Common.Files;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Blackbird.Applications.SDK.Extensions.FileManagement.Interfaces;
 using Blackbird.Applications.Sdk.Utils.Extensions.Files;
@@ -138,11 +139,9 @@ public class FileActions(
             .ToList();
 
         var deliverables = new List<DeliverableFileResponse>();
-        using var httpClient = new HttpClient();
         foreach (var document in documents)
         {
-            var file = await DownloadSignedFile(
-                httpClient,
+            var file = CreateSignedFileReference(
                 document.Url!,
                 ResolveFileName(document.Name, document.Url!, document.Id));
             deliverables.Add(new DeliverableFileResponse
@@ -162,7 +161,7 @@ public class FileActions(
             var vttName = string.Equals(Path.GetExtension(baseName), ".vtt", StringComparison.OrdinalIgnoreCase)
                 ? baseName
                 : $"{baseName}.vtt";
-            var file = await DownloadSignedFile(httpClient, order.VttUrl, vttName);
+            var file = CreateSignedFileReference(order.VttUrl, vttName);
             deliverables.Add(new DeliverableFileResponse
             {
                 File = file,
@@ -180,7 +179,7 @@ public class FileActions(
         {
             var fallbackName = $"{SanitizeFileName(order.OrderId)}-subtitled.mp4";
             var embeddedVideoName = ResolveFileName(null, embeddedVideoUrl, fallbackName);
-            var file = await DownloadSignedFile(httpClient, embeddedVideoUrl, embeddedVideoName);
+            var file = CreateSignedFileReference(embeddedVideoUrl, embeddedVideoName);
             deliverables.Add(new DeliverableFileResponse
             {
                 File = file,
@@ -199,37 +198,48 @@ public class FileActions(
             "created_subtitle_embedded_video",
             StringComparison.OrdinalIgnoreCase);
 
-    private async Task<Blackbird.Applications.Sdk.Common.Files.FileReference> DownloadSignedFile(
-        HttpClient httpClient,
+    private static FileReference CreateSignedFileReference(
         string url,
         string fileName)
     {
         if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps)
             throw new PluginApplicationException("Ollang returned an invalid deliverable download URL.");
 
-        using var response = await httpClient.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead);
-        if (!response.IsSuccessStatusCode)
-        {
-            throw new PluginApplicationException(
-                $"Ollang deliverable download failed with status {(int)response.StatusCode}.");
-        }
-
-        var contentType = response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream";
-
-        var temporaryFilePath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-        await using var temporaryFile = new FileStream(
-            temporaryFilePath,
-            FileMode.CreateNew,
-            FileAccess.ReadWrite,
-            FileShare.None,
-            bufferSize: 81920,
-            FileOptions.Asynchronous | FileOptions.DeleteOnClose);
-
-        await response.Content.CopyToAsync(temporaryFile);
-        temporaryFile.Position = 0;
-
-        return await fileManagementClient.UploadAsync(temporaryFile, contentType, fileName);
+        return new FileReference(
+            new HttpRequestMessage(HttpMethod.Get, uri),
+            fileName,
+            ResolveContentType(fileName));
     }
+
+    private static string ResolveContentType(string fileName) =>
+        Path.GetExtension(fileName).ToLowerInvariant() switch
+        {
+            ".mp4" => "video/mp4",
+            ".mov" => "video/quicktime",
+            ".wav" => "audio/wav",
+            ".mp3" => "audio/mpeg",
+            ".m4a" => "audio/mp4",
+            ".aac" => "audio/aac",
+            ".srt" => "application/x-subrip",
+            ".vtt" => "text/vtt",
+            ".itt" or ".dfxp" => "application/ttml+xml",
+            ".ass" => "text/x-ssa",
+            ".scc" => "text/x-scc",
+            ".txt" => "text/plain",
+            ".html" or ".htm" => "text/html",
+            ".json" => "application/json",
+            ".xml" => "application/xml",
+            ".xliff" or ".xlf" or ".sdlxliff" => "application/x-xliff+xml",
+            ".pdf" => "application/pdf",
+            ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            ".xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            ".pptx" => "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            ".csv" => "text/csv",
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            ".zip" => "application/zip",
+            _ => "application/octet-stream"
+        };
 
     private static string ResolveFileName(string? documentName, string url, string documentId)
     {

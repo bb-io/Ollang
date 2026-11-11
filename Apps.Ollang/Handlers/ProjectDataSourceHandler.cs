@@ -12,33 +12,20 @@ public class ProjectDataSourceHandler(InvocationContext invocationContext)
         DataSourceContext context,
         CancellationToken cancellationToken)
     {
-        var projects = new List<ProjectDto>();
-        var page = 1;
+        var request = new RestRequest("/integration/project", Method.Get)
+            .AddQueryParameter("page", 1)
+            .AddQueryParameter("take", 30)
+            .AddQueryParameter("orderBy", "name")
+            .AddQueryParameter("orderDirection", "asc");
 
-        while (true)
-        {
-            var request = new RestRequest("/integration/project", Method.Get)
-                .AddQueryParameter("page", page)
-                .AddQueryParameter("take", 50)
-                .AddQueryParameter("orderBy", "name")
-                .AddQueryParameter("orderDirection", "asc");
+        if (!string.IsNullOrWhiteSpace(context.SearchString))
+            request.AddQueryParameter("search", context.SearchString);
 
-            if (!string.IsNullOrWhiteSpace(context.SearchString))
-                request.AddQueryParameter("search", context.SearchString);
+        var response = await Client.ExecuteWithErrorHandling<PagedResponseDto<ProjectDto>>(
+            request,
+            cancellationToken);
 
-            var response = await Client.ExecuteWithErrorHandling<PagedResponseDto<ProjectDto>>(
-                request,
-                cancellationToken);
-            projects.AddRange(response.Data);
-
-            if (!response.Meta.HasNextPage)
-                break;
-
-            page++;
-        }
-
-        return projects
-            .Take(30)
+        return response.Data
             .Select(project => new DataSourceItem(
                 project.Id,
                 string.IsNullOrWhiteSpace(project.SourceLanguage)

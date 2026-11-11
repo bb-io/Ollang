@@ -107,8 +107,6 @@ public class OrderActions(
         if (memoryIds.Distinct(StringComparer.OrdinalIgnoreCase).Count() != memoryIds.Count)
             throw new PluginMisconfigurationException("Memory IDs cannot contain duplicates.");
 
-        ActionInputValidator.ValidateUrl(input.CallbackUrl, "Callback URL", allowHttp: true);
-
         var projectId = input.ProjectId;
         if (input.File is not null)
         {

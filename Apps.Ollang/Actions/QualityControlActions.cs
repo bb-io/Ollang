@@ -15,10 +15,6 @@ public class QualityControlActions(InvocationContext invocationContext) : Invoca
     public async Task<QcEvaluationResponse> RunQcEvaluation([ActionParameter] RunQcRequest input)
     {
         ActionInputValidator.ValidateRequired(input.OrderId, "Order ID");
-        ActionInputValidator.ValidateUrl(
-            input.CallbackUrl,
-            "Callback URL",
-            requirePublicHost: true);
 
         var body = new Dictionary<string, object>
         {
