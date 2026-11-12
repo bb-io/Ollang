@@ -125,17 +125,12 @@ public class FileActions(
 
         var documentTypes = (input.DocumentTypes ?? [])
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var documents = outputDocuments.Where(document =>
-            !string.IsNullOrWhiteSpace(document.Url) &&
-            (!IsSubtitleEmbeddedVideo(document) || input.IncludeSubtitleEmbeddedVideo == true) &&
-            (documentTypes.Count == 0 || documentTypes.Contains(document.Type ?? string.Empty)) &&
-            (string.IsNullOrWhiteSpace(input.NameContains) ||
-             (document.Name?.Contains(input.NameContains, StringComparison.OrdinalIgnoreCase) ?? false)) &&
-            (string.IsNullOrWhiteSpace(input.Language) ||
-             string.Equals(
-                 document.SourceLanguage ?? order.TargetLanguage,
-                 input.Language,
-                 StringComparison.OrdinalIgnoreCase)))
+        var documents = outputDocuments
+            .Where(document => MatchesDocumentFilters(
+                document,
+                input,
+                documentTypes,
+                order.TargetLanguage))
             .ToList();
 
         var deliverables = new List<DeliverableFileResponse>();
@@ -197,6 +192,22 @@ public class FileActions(
             document.Type,
             "created_subtitle_embedded_video",
             StringComparison.OrdinalIgnoreCase);
+
+    private static bool MatchesDocumentFilters(
+        OrderDocumentResponse document,
+        DownloadOrderDeliverablesRequest input,
+        HashSet<string> documentTypes,
+        string? targetLanguage) =>
+        !string.IsNullOrWhiteSpace(document.Url) &&
+        (!IsSubtitleEmbeddedVideo(document) || input.IncludeSubtitleEmbeddedVideo == true) &&
+        (documentTypes.Count == 0 || documentTypes.Contains(document.Type ?? string.Empty)) &&
+        (string.IsNullOrWhiteSpace(input.NameContains) ||
+         (document.Name?.Contains(input.NameContains, StringComparison.OrdinalIgnoreCase) ?? false)) &&
+        (string.IsNullOrWhiteSpace(input.Language) ||
+         string.Equals(
+             document.SourceLanguage ?? targetLanguage,
+             input.Language,
+             StringComparison.OrdinalIgnoreCase));
 
     private static FileReference CreateSignedFileReference(
         string url,
@@ -261,5 +272,4 @@ public class FileActions(
         var invalidCharacters = Path.GetInvalidFileNameChars();
         return string.Concat(value.Select(character => invalidCharacters.Contains(character) ? '_' : character));
     }
-
 }

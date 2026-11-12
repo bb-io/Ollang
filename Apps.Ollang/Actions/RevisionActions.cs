@@ -12,6 +12,17 @@ namespace Apps.Ollang.Actions;
 [ActionList("Revisions")]
 public class RevisionActions(InvocationContext invocationContext) : Invocable(invocationContext)
 {
+    [Action("Search order revisions", Description = "Get all revision requests for an order.")]
+    public async Task<SearchRevisionsResponse> SearchOrderRevisions([ActionParameter] OrderIdentifier input)
+    {
+        ActionInputValidator.ValidateRequired(input.OrderId, "Order ID");
+        var request = new RestRequest(
+            $"/integration/revision/{Uri.EscapeDataString(input.OrderId)}",
+            Method.Get);
+        var revisions = await Client.ExecuteWithErrorHandling<List<RevisionResponse>>(request);
+        return new SearchRevisionsResponse { Revisions = revisions ?? [] };
+    }
+
     [Action("Create revision", Description = "Request a correction for an eligible completed or delivered order.")]
     public async Task<RevisionResponse> CreateRevision([ActionParameter] CreateRevisionRequest input)
     {
@@ -34,16 +45,5 @@ public class RevisionActions(InvocationContext invocationContext) : Invocable(in
             .AddJsonBody(body);
 
         return await Client.ExecuteWithErrorHandling<RevisionResponse>(request);
-    }
-
-    [Action("Search order revisions", Description = "Get all revision requests for an order.")]
-    public async Task<SearchRevisionsResponse> SearchOrderRevisions([ActionParameter] OrderIdentifier input)
-    {
-        ActionInputValidator.ValidateRequired(input.OrderId, "Order ID");
-        var request = new RestRequest(
-            $"/integration/revision/{Uri.EscapeDataString(input.OrderId)}",
-            Method.Get);
-        var revisions = await Client.ExecuteWithErrorHandling<List<RevisionResponse>>(request);
-        return new SearchRevisionsResponse { Revisions = revisions ?? [] };
     }
 }
