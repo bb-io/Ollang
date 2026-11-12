@@ -1,4 +1,3 @@
-using Apps.Ollang.Dtos;
 using Apps.Ollang.Models.Responses;
 using Blackbird.Applications.Sdk.Common.Dynamic;
 using Blackbird.Applications.Sdk.Common.Invocation;
@@ -13,10 +12,7 @@ public class OrderDataSourceHandler(InvocationContext invocationContext)
         DataSourceContext context,
         CancellationToken cancellationToken)
     {
-        var orders = new List<OrderSummaryResponse>();
-        var page = 1;
-
-        while (orders.Count < 30)
+        var orders = await Client.Paginate<OrderSummaryResponse>(page =>
         {
             var request = new RestRequest("/integration/orders", Method.Get)
                 .AddQueryParameter("pageOptions[page]", page)
@@ -27,18 +23,10 @@ public class OrderDataSourceHandler(InvocationContext invocationContext)
             if (!string.IsNullOrWhiteSpace(context.SearchString))
                 request.AddQueryParameter("pageOptions[search]", context.SearchString);
 
-            var response = await Client.ExecuteWithErrorHandling<PagedResponseDto<OrderSummaryResponse>>(
-                request,
-                cancellationToken);
-            orders.AddRange(response.Data);
+            return request;
+        }, 30, cancellationToken);
 
-            if (!response.Meta.HasNextPage)
-                break;
-
-            page++;
-        }
-
-        return orders.Take(30).Select(order => new DataSourceItem(
+        return orders.Select(order => new DataSourceItem(
             order.OrderId,
             BuildDisplayName(order)));
     }

@@ -78,6 +78,31 @@ public class OllangClient : BlackBirdRestClient
         }
     }
 
+    public async Task<List<T>> Paginate<T>(
+        Func<int, RestRequest> requestFactory,
+        int? maxItems = null,
+        CancellationToken cancellationToken = default)
+    {
+        var items = new List<T>();
+        var page = 1;
+
+        while (!maxItems.HasValue || items.Count < maxItems.Value)
+        {
+            var request = requestFactory(page);
+            var response = await ExecuteWithErrorHandling<PagedResponseDto<T>>(request, cancellationToken);
+            items.AddRange(response.Data);
+
+            if (!response.Meta.HasNextPage)
+                break;
+
+            page++;
+        }
+
+        return maxItems.HasValue
+            ? items.Take(maxItems.Value).ToList()
+            : items;
+    }
+
     public Task<ProjectIdResponse> UploadSourceFileAsync(
         byte[] fileBytes,
         string fileName,

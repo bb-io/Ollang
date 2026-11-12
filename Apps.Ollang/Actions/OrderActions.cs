@@ -21,10 +21,7 @@ public class OrderActions(
     [Action("Search orders", Description = "Search all Ollang orders matching the optional filters.")]
     public async Task<SearchOrdersResponse> SearchOrders([ActionParameter] SearchOrdersRequest input)
     {
-        var orders = new List<OrderSummaryResponse>();
-        var page = 1;
-
-        while (true)
+        var orders = await Client.Paginate<OrderSummaryResponse>(page =>
         {
             var request = new RestRequest("/integration/orders", Method.Get)
                 .AddQueryParameter("pageOptions[page]", page)
@@ -42,14 +39,8 @@ public class OrderActions(
             if (input.CreatedTo.HasValue)
                 request.AddQueryParameter("filter[createdAtRange][to]", input.CreatedTo.Value.ToString("O"));
 
-            var response = await Client.ExecuteWithErrorHandling<PagedResponseDto<OrderSummaryResponse>>(request);
-            orders.AddRange(response.Data);
-
-            if (!response.Meta.HasNextPage)
-                break;
-
-            page++;
-        }
+            return request;
+        });
 
         return new SearchOrdersResponse { Orders = orders };
     }
