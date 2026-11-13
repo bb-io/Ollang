@@ -6,7 +6,7 @@
         <Nullable>enable</Nullable>
         <Product>Ollang [Beta]</Product>
         <Description>Create and manage Ollang localization projects and orders.</Description>
-        <Version>1.0.0</Version>
+        <Version>1.0.1</Version>
         <AssemblyName>Apps.Ollang</AssemblyName>
     </PropertyGroup>
 
