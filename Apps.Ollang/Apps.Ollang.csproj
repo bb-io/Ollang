@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <Product>Ollang [Beta]</Product>
+        <Description>Create and manage Ollang localization projects and orders.</Description>
+        <Version>1.0.1</Version>
+        <AssemblyName>Apps.Ollang</AssemblyName>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Blackbird.Applications.SDK.Blueprints" Version="1.0.2" />
+        <PackageReference Include="Blackbird.Applications.SDK.Extensions.FileManagement" Version="1.1.0" />
+        <PackageReference Include="Blackbird.Applications.Sdk.Utils" Version="1.1.0-rc.8709" />
+        <PackageReference Include="MimeTypes" Version="2.5.2" />
+        <PackageReference Include="Polly" Version="8.2.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource CopyToOutputDirectory="Always" Include="image\icon.png" />
+        <EmbeddedResource CopyToOutputDirectory="Always" Include="..\README.md" Link="README.md" />
+    </ItemGroup>
+
+</Project>
