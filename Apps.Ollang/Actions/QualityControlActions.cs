@@ -12,7 +12,7 @@ namespace Apps.Ollang.Actions;
 public class QualityControlActions(InvocationContext invocationContext) : Invocable(invocationContext)
 {
     [Action("Run QC evaluation", Description = "Start an asynchronous AI quality evaluation for an eligible completed or delivered order.")]
-    public async Task<QcEvaluationResponse> RunQcEvaluation([ActionParameter] RunQcRequest input)
+    public async Task<RunQcEvaluationResponse> RunQcEvaluation([ActionParameter] RunQcRequest input)
     {
         ActionInputValidator.ValidateRequired(input.OrderId, "Order ID");
 
@@ -33,6 +33,6 @@ public class QualityControlActions(InvocationContext invocationContext) : Invoca
                 Method.Post)
             .AddJsonBody(body);
 
-        return await Client.ExecuteWithErrorHandling<QcEvaluationResponse>(request);
+        return await Client.ExecuteWithErrorHandling<RunQcEvaluationResponse>(request);
     }
 }

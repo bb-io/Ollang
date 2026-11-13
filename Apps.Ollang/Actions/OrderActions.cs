@@ -92,11 +92,10 @@ public class OrderActions(
 
         var memoryIds = (input.MemoryIds ?? [])
             .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
         if (memoryIds.Count > 20)
             throw new PluginMisconfigurationException("Select no more than 20 Memory IDs.");
-        if (memoryIds.Distinct(StringComparer.OrdinalIgnoreCase).Count() != memoryIds.Count)
-            throw new PluginMisconfigurationException("Memory IDs cannot contain duplicates.");
 
         var projectId = input.ProjectId;
         if (input.File is not null)
@@ -147,14 +146,13 @@ public class OrderActions(
     }
 
     [Action("Request human review", Description = "Request professional human review for an eligible completed or delivered order.")]
-    public async Task<SuccessResponse> RequestHumanReview([ActionParameter] OrderIdentifier input)
+    public async Task RequestHumanReview([ActionParameter] OrderIdentifier input)
     {
         ActionInputValidator.ValidateRequired(input.OrderId, "Order ID");
         var request = new RestRequest(
             $"/integration/orders/{Uri.EscapeDataString(input.OrderId)}/human-review",
             Method.Post);
         await Client.ExecuteWithErrorHandling(request);
-        return new SuccessResponse { Success = true };
     }
 
     [Action("Re-run order", Description = "Reprocess an eligible completed or stalled AI order.")]

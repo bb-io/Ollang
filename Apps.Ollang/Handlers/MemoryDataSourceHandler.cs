@@ -18,7 +18,6 @@ public class MemoryDataSourceHandler(InvocationContext invocationContext)
         return memories
             .Where(memory => string.IsNullOrWhiteSpace(context.SearchString) ||
                              memory.Title.Contains(context.SearchString, StringComparison.OrdinalIgnoreCase))
-            .Take(30)
             .Select(memory => new DataSourceItem(
                 memory.Id,
                 $"{memory.Title} ({memory.MemoryItemsCount} items)"));

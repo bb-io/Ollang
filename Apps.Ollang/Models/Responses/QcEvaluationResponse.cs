@@ -12,6 +12,7 @@ public class QcEvaluationResponse
     public string? Message { get; set; }
 
     [Display("Evaluation ID")]
+    [JsonProperty("id")]
     public string EvaluationId { get; set; } = string.Empty;
 
     [Display("Order ID")]
@@ -37,16 +38,4 @@ public class QcEvaluationResponse
 
     [Display("Is loading")]
     public bool? IsLoading { get; set; }
-
-    [JsonProperty("id")]
-    private string? Id
-    {
-        set => EvaluationId = value ?? string.Empty;
-    }
-
-    [JsonProperty("evalId")]
-    private string? EvalId
-    {
-        set => EvaluationId = value ?? string.Empty;
-    }
 }
