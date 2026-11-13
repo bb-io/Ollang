@@ -2,11 +2,24 @@ using Apps.Ollang.Models.Requests;
 using Apps.Ollang.Models.Responses;
 using Blackbird.Applications.Sdk.Common.Exceptions;
 using Blackbird.Applications.Sdk.Common.Files;
+using System.Net.Mime;
 
 namespace Apps.Ollang.Builders;
 
 public static class OrderDeliverablesBuilder
 {
+    private static readonly IReadOnlyDictionary<string, string> ContentTypeOverrides =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            [".itt"] = "application/ttml+xml",
+            [".dfxp"] = "application/ttml+xml",
+            [".ass"] = "text/x-ssa",
+            [".scc"] = "text/x-scc",
+            [".xliff"] = "application/xliff+xml",
+            [".sdlxliff"] = "application/xliff+xml",
+            [".mp3"] = "audio/mpeg"
+        };
+
     public static List<DeliverableFileResponse> Build(
         OrderResponse order,
         DownloadOrderDeliverablesRequest input)
@@ -136,35 +149,16 @@ public static class OrderDeliverablesBuilder
             ResolveContentType(fileName));
     }
 
-    private static string ResolveContentType(string fileName) =>
-        Path.GetExtension(fileName).ToLowerInvariant() switch
-        {
-            ".mp4" => "video/mp4",
-            ".mov" => "video/quicktime",
-            ".wav" => "audio/wav",
-            ".mp3" => "audio/mpeg",
-            ".m4a" => "audio/mp4",
-            ".aac" => "audio/aac",
-            ".srt" => "application/x-subrip",
-            ".vtt" => "text/vtt",
-            ".itt" or ".dfxp" => "application/ttml+xml",
-            ".ass" => "text/x-ssa",
-            ".scc" => "text/x-scc",
-            ".txt" => "text/plain",
-            ".html" or ".htm" => "text/html",
-            ".json" => "application/json",
-            ".xml" => "application/xml",
-            ".xliff" or ".xlf" or ".sdlxliff" => "application/x-xliff+xml",
-            ".pdf" => "application/pdf",
-            ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            ".xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            ".pptx" => "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-            ".csv" => "text/csv",
-            ".jpg" or ".jpeg" => "image/jpeg",
-            ".png" => "image/png",
-            ".zip" => "application/zip",
-            _ => "application/octet-stream"
-        };
+    private static string ResolveContentType(string fileName)
+    {
+        var extension = Path.GetExtension(fileName);
+        if (ContentTypeOverrides.TryGetValue(extension, out var contentType))
+            return contentType;
+
+        return MimeTypes.TryGetMimeType(fileName, out contentType)
+            ? contentType
+            : MediaTypeNames.Application.Octet;
+    }
 
     private static string ResolveFileName(string? documentName, string url, string documentId)
     {

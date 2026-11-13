@@ -35,11 +35,11 @@ public class CreateOrderRequest
     [StaticDataSource(typeof(ServiceLevelDataSourceHandler))]
     public string Level { get; set; } = string.Empty;
 
-    [Display("Target languages")]
+    [Display("Standard target languages", Description = "Target languages that use standard delivery.")]
     [StaticDataSource(typeof(LanguageDataSourceHandler))]
     public IEnumerable<string> TargetLanguages { get; set; } = [];
 
-    [Display("Rush target languages", Description = "Target languages that require rush delivery. Each must also be selected in Target languages.")]
+    [Display("Rush target languages", Description = "Target languages that require rush delivery. Do not also select them as standard target languages.")]
     [StaticDataSource(typeof(LanguageDataSourceHandler))]
     public IEnumerable<string>? RushTargetLanguages { get; set; }
 

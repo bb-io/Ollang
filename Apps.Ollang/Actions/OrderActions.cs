@@ -72,23 +72,21 @@ public class OrderActions(
         if (!int.TryParse(input.Level, out var level) || level is < 0 or > 1)
             throw new PluginMisconfigurationException("Level must be AI generated or Human review.");
 
-        var targetLanguages = (input.TargetLanguages ?? [])
+        var standardLanguages = (input.TargetLanguages ?? [])
             .Where(language => !string.IsNullOrWhiteSpace(language))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
-        if (targetLanguages.Count == 0)
-            throw new PluginMisconfigurationException("Select at least one Target language.");
 
         var rushLanguages = (input.RushTargetLanguages ?? [])
             .Where(language => !string.IsNullOrWhiteSpace(language))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var invalidRushLanguages = rushLanguages.Except(targetLanguages, StringComparer.OrdinalIgnoreCase).ToList();
-        if (invalidRushLanguages.Count > 0)
-        {
-            throw new PluginMisconfigurationException(
-                $"Every Rush target language must also be selected in Target languages: " +
-                $"{string.Join(", ", invalidRushLanguages)}.");
-        }
+
+        var targetLanguages = standardLanguages
+            .Concat(rushLanguages)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        if (targetLanguages.Count == 0)
+            throw new PluginMisconfigurationException("Select at least one standard or rush target language.");
 
         var memoryIds = (input.MemoryIds ?? [])
             .Where(id => !string.IsNullOrWhiteSpace(id))
