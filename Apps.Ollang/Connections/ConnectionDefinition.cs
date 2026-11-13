@@ -16,8 +16,8 @@ public class ConnectionDefinition : IConnectionDefinition
             {
                 new(CredsNames.Token)
                 {
-                    DisplayName = "API token",
-                    Description = "Developer API key created in the Ollang dashboard.",
+                    DisplayName = "API key",
+                    Description = "API key generated in the Olabs Dashboard. Enter only the key value, without the X-Api-Key header name.",
                     Sensitive = true
                 }
             }

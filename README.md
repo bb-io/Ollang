@@ -10,7 +10,14 @@ Ollang is a localization platform for translating documents, subtitles, and audi
 
 ## Connecting
 
-Create a developer API key in the Ollang dashboard and use it as the **API token** when adding the connection in Blackbird.
+1. Sign in to the [Olabs Dashboard](https://lab.ollang.com/) and generate an API key for your Ollang account.
+2. Copy the generated key. Store it securely because it provides access to the folders, projects, and orders associated with the account.
+3. In Blackbird, open **Apps**, search for **Ollang**, and select **Add connection**.
+4. Give the connection a recognizable name, for example `My Ollang account`.
+5. Paste the key into the **API key** field. Enter only the key value; do not include the `X-Api-Key` header name.
+6. Select **Connect** and confirm that the connection status is **Connected**.
+
+Ollang uses the production Integration API at `https://api-integration.ollang.com`; no separate base URL or sandbox URL is required.
 
 ## Actions
 
