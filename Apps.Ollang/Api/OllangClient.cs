@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Net;
 using Apps.Ollang.Constants;
 using Apps.Ollang.Dtos;
+using Apps.Ollang.Extensions;
 using Apps.Ollang.Models.Responses;
 using Blackbird.Applications.Sdk.Common.Authentication;
 using Blackbird.Applications.Sdk.Common.Exceptions;
@@ -121,8 +122,7 @@ public class OllangClient : BlackBirdRestClient
         request.AddParameter("name", name);
         request.AddParameter("sourceLanguage", sourceLanguage);
 
-        if (!string.IsNullOrWhiteSpace(folderId))
-            request.AddParameter("folderId", folderId);
+        request.AddOptionalParameter("folderId", folderId);
 
         if (!string.IsNullOrWhiteSpace(note))
         {

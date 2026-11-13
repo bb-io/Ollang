@@ -1,4 +1,5 @@
 using Apps.Ollang.Dtos;
+using Apps.Ollang.Extensions;
 using Apps.Ollang.Models.Identifiers;
 using Apps.Ollang.Models.Requests;
 using Apps.Ollang.Models.Responses;
@@ -29,9 +30,9 @@ public class OrderActions(
                 .AddQueryParameter("pageOptions[orderBy]", input.SortBy ?? "id")
                 .AddQueryParameter("pageOptions[orderDirection]", input.SortDirection ?? "desc");
 
-            AddOptionalQueryParameter(request, "pageOptions[search]", input.Search);
-            AddOptionalQueryParameter(request, "filter[type]", input.OrderType);
-            AddOptionalQueryParameter(request, "filter[name]", input.Name);
+            request.AddOptionalParameter("pageOptions[search]", input.Search, ParameterType.QueryString);
+            request.AddOptionalParameter("filter[type]", input.OrderType, ParameterType.QueryString);
+            request.AddOptionalParameter("filter[name]", input.Name, ParameterType.QueryString);
 
             if (input.CreatedFrom.HasValue)
                 request.AddQueryParameter("filter[createdAtRange][from]", input.CreatedFrom.Value.ToString("O"));
@@ -162,12 +163,6 @@ public class OrderActions(
                 Method.Post)
             .AddJsonBody(new { triggerFullChain = input.RerunFullChain ?? false });
         return await Client.ExecuteWithErrorHandling<RerunOrderResponse>(request);
-    }
-
-    private static void AddOptionalQueryParameter(RestRequest request, string name, string? value)
-    {
-        if (!string.IsNullOrWhiteSpace(value))
-            request.AddQueryParameter(name, value);
     }
 
     private static void NormalizeOrderCollections(OrderResponse order)

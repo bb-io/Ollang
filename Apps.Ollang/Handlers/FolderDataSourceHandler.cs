@@ -1,4 +1,5 @@
 using Apps.Ollang.Dtos;
+using Apps.Ollang.Extensions;
 using Blackbird.Applications.Sdk.Common.Dynamic;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using RestSharp;
@@ -18,8 +19,7 @@ public class FolderDataSourceHandler(InvocationContext invocationContext)
             .AddQueryParameter("orderBy", "name")
             .AddQueryParameter("orderDirection", "asc");
 
-        if (!string.IsNullOrWhiteSpace(context.SearchString))
-            request.AddQueryParameter("search", context.SearchString);
+        request.AddOptionalParameter("search", context.SearchString, ParameterType.QueryString);
 
         var response = await Client.ExecuteWithErrorHandling<PagedResponseDto<FolderDto>>(
             request,

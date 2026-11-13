@@ -39,7 +39,7 @@ public class ConnectionValidator(InvocationContext invocationContext) : BaseInvo
             };
 
         } 
-        catch(Exception ex)
+        catch (Exception ex) when (ex is not OutOfMemoryException)
         {
             InvocationContext.Logger?.LogError($"Connection validation failed: {ex.Message}", []);
 

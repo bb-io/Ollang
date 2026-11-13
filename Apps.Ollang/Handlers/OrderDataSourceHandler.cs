@@ -1,3 +1,4 @@
+using Apps.Ollang.Extensions;
 using Apps.Ollang.Models.Responses;
 using Blackbird.Applications.Sdk.Common.Dynamic;
 using Blackbird.Applications.Sdk.Common.Invocation;
@@ -20,8 +21,10 @@ public class OrderDataSourceHandler(InvocationContext invocationContext)
                 .AddQueryParameter("pageOptions[orderBy]", "createdAt")
                 .AddQueryParameter("pageOptions[orderDirection]", "desc");
 
-            if (!string.IsNullOrWhiteSpace(context.SearchString))
-                request.AddQueryParameter("pageOptions[search]", context.SearchString);
+            request.AddOptionalParameter(
+                "pageOptions[search]",
+                context.SearchString,
+                ParameterType.QueryString);
 
             return request;
         }, 30, cancellationToken);

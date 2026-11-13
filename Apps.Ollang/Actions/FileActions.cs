@@ -1,4 +1,5 @@
 using Apps.Ollang.Builders;
+using Apps.Ollang.Extensions;
 using Apps.Ollang.Models.Requests;
 using Apps.Ollang.Models.Responses;
 using Apps.Ollang.Utils;
@@ -62,8 +63,7 @@ public class FileActions(
         request.AddParameter("projectId", input.ProjectId);
         request.AddParameter("name", input.Name);
 
-        if (!string.IsNullOrWhiteSpace(input.SourceLanguage))
-            request.AddParameter("sourceLanguage", input.SourceLanguage);
+        request.AddOptionalParameter("sourceLanguage", input.SourceLanguage);
 
         return await Client.ExecuteWithErrorHandling<ProjectIdResponse>(request);
     }
@@ -98,11 +98,8 @@ public class FileActions(
         request.AddFile("file", fileBytes, input.File.Name, input.File.ContentType ?? "application/octet-stream");
         request.AddParameter("type", input.DocumentType);
 
-        if (!string.IsNullOrWhiteSpace(input.Name))
-            request.AddParameter("name", input.Name);
-
-        if (!string.IsNullOrWhiteSpace(input.Language))
-            request.AddParameter("language", input.Language);
+        request.AddOptionalParameter("name", input.Name);
+        request.AddOptionalParameter("language", input.Language);
 
         return await Client.ExecuteWithErrorHandling<ReferenceDocumentResponse>(request);
     }
