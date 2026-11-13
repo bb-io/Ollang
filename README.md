@@ -17,7 +17,7 @@ Ollang is a localization platform for translating documents, subtitles, and audi
 5. Paste the key into the **API key** field. Enter only the key value; do not include the `X-Api-Key` header name.
 6. Select **Connect** and confirm that the connection status is **Connected**.
 
-Ollang uses the production Integration API at `https://api-integration.ollang.com`; no separate base URL or sandbox URL is required.
+Ollang uses the production Integration API at `https://api-integration.ollang.com`
 
 ## Actions
 
@@ -51,8 +51,7 @@ Ollang uses the production Integration API at `https://api-integration.ollang.co
 
 Language inputs accept BCP-47 codes such as `en`, `uk`, `fr-CA`, or `zh-Hant`.
 
-Actions that create or modify orders require sufficient Ollang credits and an order in the appropriate state. The order-status event is not included because Ollang currently exposes neither a global webhook subscription nor an updated-since order feed.
-
+Actions that create or modify orders require sufficient Ollang credits and an order in the appropriate state.
 ## Feedback
 
 Do you want to use this app or do you have feedback on our implementation? Reach out to us using the [established channels](https://www.blackbird.io/) or create an issue.
