@@ -10,6 +10,7 @@ using Blackbird.Applications.Sdk.Common.Exceptions;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Blackbird.Applications.SDK.Extensions.FileManagement.Interfaces;
 using Blackbird.Applications.Sdk.Utils.Extensions.Files;
+using Newtonsoft.Json;
 using RestSharp;
 
 namespace Apps.Ollang.Actions;
@@ -22,6 +23,26 @@ public class OrderActions(
     [Action("Search orders", Description = "Search all Ollang orders matching the optional filters.")]
     public async Task<SearchOrdersResponse> SearchOrders([ActionParameter] SearchOrdersRequest input)
     {
+        if (input.CreatedFrom > input.CreatedTo)
+            throw new PluginMisconfigurationException("Created from must be earlier than or equal to Created to.");
+
+        var filter = new Dictionary<string, object>();
+        if (!string.IsNullOrWhiteSpace(input.OrderType))
+            filter["type"] = input.OrderType;
+        if (!string.IsNullOrWhiteSpace(input.Name))
+            filter["name"] = input.Name;
+
+        if (input.CreatedFrom.HasValue || input.CreatedTo.HasValue)
+        {
+            var createdAtRange = new Dictionary<string, string>();
+            if (input.CreatedFrom.HasValue)
+                createdAtRange["from"] = input.CreatedFrom.Value.ToString("O");
+            if (input.CreatedTo.HasValue)
+                createdAtRange["to"] = input.CreatedTo.Value.ToString("O");
+
+            filter["createdAtRange"] = createdAtRange;
+        }
+
         var orders = await Client.Paginate<OrderSummaryResponse>(page =>
         {
             var request = new RestRequest("/integration/orders", Method.Get)
@@ -31,14 +52,8 @@ public class OrderActions(
                 .AddQueryParameter("pageOptions[orderDirection]", input.SortDirection ?? "desc");
 
             request.AddOptionalParameter("pageOptions[search]", input.Search, ParameterType.QueryString);
-            request.AddOptionalParameter("filter[type]", input.OrderType, ParameterType.QueryString);
-            request.AddOptionalParameter("filter[name]", input.Name, ParameterType.QueryString);
-
-            if (input.CreatedFrom.HasValue)
-                request.AddQueryParameter("filter[createdAtRange][from]", input.CreatedFrom.Value.ToString("O"));
-
-            if (input.CreatedTo.HasValue)
-                request.AddQueryParameter("filter[createdAtRange][to]", input.CreatedTo.Value.ToString("O"));
+            if (filter.Count > 0)
+                request.AddQueryParameter("filter", JsonConvert.SerializeObject(filter));
 
             return request;
         });

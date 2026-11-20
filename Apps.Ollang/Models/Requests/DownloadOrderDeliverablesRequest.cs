@@ -12,7 +12,7 @@ public class DownloadOrderDeliverablesRequest
     [DataSource(typeof(OrderDataSourceHandler))]
     public string OrderId { get; set; } = string.Empty;
 
-    [Display("Document types", Description = "Optional deliverable types to include.")]
+    [Display("Document types", Description = "Optional deliverable types to include. Select On-screen text XLSX to export visual translation rows as a spreadsheet.")]
     [StaticDataSource(typeof(OrderDocumentTypeDataSourceHandler))]
     public IEnumerable<string>? DocumentTypes { get; set; }
 

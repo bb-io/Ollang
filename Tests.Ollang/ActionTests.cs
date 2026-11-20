@@ -2,6 +2,7 @@ using Apps.Ollang.Actions;
 using Apps.Ollang.Handlers;
 using Apps.Ollang.Models.Requests;
 using Blackbird.Applications.Sdk.Common.Dynamic;
+using Blackbird.Applications.Sdk.Common.Exceptions;
 using Blackbird.Applications.Sdk.Common.Files;
 using Tests.Ollang.Base;
 
@@ -19,6 +20,33 @@ public class ActionTests : TestBase
 
         Assert.IsNotNull(result.Orders);
         PrintJsonResult(result);
+    }
+
+    [TestMethod]
+    public async Task Search_orders_respects_created_at_range()
+    {
+        var actions = new OrderActions(InvocationContext, FileManager);
+
+        var result = await actions.SearchOrders(new SearchOrdersRequest
+        {
+            CreatedFrom = new DateTime(2099, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+            CreatedTo = new DateTime(2099, 1, 2, 0, 0, 0, DateTimeKind.Utc)
+        });
+
+        Assert.AreEqual(0, result.Orders.Count());
+    }
+
+    [TestMethod]
+    public async Task Search_orders_rejects_inverted_created_at_range()
+    {
+        var actions = new OrderActions(InvocationContext, FileManager);
+
+        await Assert.ThrowsExceptionAsync<PluginMisconfigurationException>(() =>
+            actions.SearchOrders(new SearchOrdersRequest
+            {
+                CreatedFrom = new DateTime(2026, 11, 18, 0, 0, 0, DateTimeKind.Utc),
+                CreatedTo = new DateTime(2026, 11, 17, 0, 0, 0, DateTimeKind.Utc)
+            }));
     }
 
     [TestMethod]

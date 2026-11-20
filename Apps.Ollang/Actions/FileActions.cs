@@ -1,4 +1,5 @@
 using Apps.Ollang.Builders;
+using Apps.Ollang.Constants;
 using Apps.Ollang.Extensions;
 using Apps.Ollang.Models.Requests;
 using Apps.Ollang.Models.Responses;
@@ -104,7 +105,7 @@ public class FileActions(
         return await Client.ExecuteWithErrorHandling<ReferenceDocumentResponse>(request);
     }
 
-    [Action("Download order deliverables", Description = "Download order files using optional type, name, and language filters.")]
+    [Action("Download order deliverables", Description = "Download order files using optional type, name, and language filters, including on-screen text XLSX exports.")]
     public async Task<DownloadOrderDeliverablesResponse> DownloadOrderDeliverables(
         [ActionParameter] DownloadOrderDeliverablesRequest input)
     {
@@ -115,6 +116,47 @@ public class FileActions(
             Method.Get);
         var order = await Client.ExecuteWithErrorHandling<OrderResponse>(orderRequest);
         var deliverables = OrderDeliverablesBuilder.Build(order, input);
+
+        if ((input.DocumentTypes ?? []).Contains(
+                "on_screen_text_xlsx",
+                StringComparer.OrdinalIgnoreCase))
+        {
+            deliverables.Add(await DownloadOnScreenTextXlsx(input.OrderId, order));
+        }
+
         return new DownloadOrderDeliverablesResponse { Deliverables = deliverables };
+    }
+
+    private async Task<DeliverableFileResponse> DownloadOnScreenTextXlsx(
+        string orderId,
+        OrderResponse order)
+    {
+        var request = new RestRequest(
+            $"/integration/orders/{Uri.EscapeDataString(orderId)}/on-screen-text/export-xlsx",
+            Method.Get);
+        var response = await Client.ExecuteWithErrorHandling(request);
+        var fileBytes = response.RawBytes;
+
+        if (fileBytes is not { Length: > 0 })
+            throw new PluginApplicationException("Ollang returned an empty on-screen text XLSX file.");
+
+        var orderName = string.IsNullOrWhiteSpace(order.Name) ? order.OrderId : order.Name;
+        var fileName = FileHelper.ResolveDownloadFileName(
+            response,
+            $"{orderName}_on-screen-text.xlsx");
+        await using var stream = new MemoryStream(fileBytes, writable: false);
+        var file = await fileManagementClient.UploadAsync(
+            stream,
+            FileHelper.ResolveContentType(fileName),
+            fileName);
+
+        return new DeliverableFileResponse
+        {
+            File = file,
+            Name = fileName,
+            DocumentType = "on_screen_text_xlsx",
+            Language = order.TargetLanguage,
+            Size = fileBytes.LongLength
+        };
     }
 }
