@@ -1,25 +1,13 @@
 using Apps.Ollang.Models.Requests;
 using Apps.Ollang.Models.Responses;
+using Apps.Ollang.Utils;
 using Blackbird.Applications.Sdk.Common.Exceptions;
 using Blackbird.Applications.Sdk.Common.Files;
-using System.Net.Mime;
 
 namespace Apps.Ollang.Builders;
 
 public static class OrderDeliverablesBuilder
 {
-    private static readonly IReadOnlyDictionary<string, string> ContentTypeOverrides =
-        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-        {
-            [".itt"] = "application/ttml+xml",
-            [".dfxp"] = "application/ttml+xml",
-            [".ass"] = "text/x-ssa",
-            [".scc"] = "text/x-scc",
-            [".xliff"] = "application/xliff+xml",
-            [".sdlxliff"] = "application/xliff+xml",
-            [".mp3"] = "audio/mpeg"
-        };
-
     public static List<DeliverableFileResponse> Build(
         OrderResponse order,
         DownloadOrderDeliverablesRequest input)
@@ -60,7 +48,7 @@ public static class OrderDeliverablesBuilder
     {
         var file = CreateSignedFileReference(
             document.Url!,
-            ResolveFileName(document.Name, document.Url!, document.Id));
+            FileHelper.ResolveFileName(document.Name, document.Url!, document.Id));
 
         return new DeliverableFileResponse
         {
@@ -81,7 +69,7 @@ public static class OrderDeliverablesBuilder
     {
         if (input.IncludeVtt == true && !string.IsNullOrWhiteSpace(order.VttUrl))
         {
-            var baseName = SanitizeFileName(order.Name ?? order.OrderId);
+            var baseName = FileHelper.SanitizeFileName(order.Name ?? order.OrderId);
             var vttName = string.Equals(Path.GetExtension(baseName), ".vtt", StringComparison.OrdinalIgnoreCase)
                 ? baseName
                 : $"{baseName}.vtt";
@@ -101,8 +89,8 @@ public static class OrderDeliverablesBuilder
             !embeddedVideoAlreadyIncluded &&
             !string.IsNullOrWhiteSpace(embeddedVideoUrl))
         {
-            var fallbackName = $"{SanitizeFileName(order.OrderId)}-subtitled.mp4";
-            var embeddedVideoName = ResolveFileName(null, embeddedVideoUrl, fallbackName);
+            var fallbackName = $"{FileHelper.SanitizeFileName(order.OrderId)}-subtitled.mp4";
+            var embeddedVideoName = FileHelper.ResolveFileName(null, embeddedVideoUrl, fallbackName);
             var file = CreateSignedFileReference(embeddedVideoUrl, embeddedVideoName);
             deliverables.Add(new DeliverableFileResponse
             {
@@ -146,38 +134,6 @@ public static class OrderDeliverablesBuilder
         return new FileReference(
             new HttpRequestMessage(HttpMethod.Get, uri),
             fileName,
-            ResolveContentType(fileName));
-    }
-
-    private static string ResolveContentType(string fileName)
-    {
-        var extension = Path.GetExtension(fileName);
-        if (ContentTypeOverrides.TryGetValue(extension, out var contentType))
-            return contentType;
-
-        return MimeTypes.TryGetMimeType(fileName, out contentType)
-            ? contentType
-            : MediaTypeNames.Application.Octet;
-    }
-
-    private static string ResolveFileName(string? documentName, string url, string documentId)
-    {
-        if (!string.IsNullOrWhiteSpace(documentName) && !string.IsNullOrWhiteSpace(Path.GetExtension(documentName)))
-            return SanitizeFileName(documentName);
-
-        if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
-        {
-            var urlFileName = Uri.UnescapeDataString(Path.GetFileName(uri.AbsolutePath));
-            if (!string.IsNullOrWhiteSpace(urlFileName))
-                return SanitizeFileName(urlFileName);
-        }
-
-        return SanitizeFileName(documentName ?? documentId);
-    }
-
-    private static string SanitizeFileName(string value)
-    {
-        var invalidCharacters = Path.GetInvalidFileNameChars();
-        return string.Concat(value.Select(character => invalidCharacters.Contains(character) ? '_' : character));
+            FileHelper.ResolveContentType(fileName));
     }
 }

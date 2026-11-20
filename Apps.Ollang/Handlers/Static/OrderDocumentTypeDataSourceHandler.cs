@@ -1,3 +1,4 @@
+using Apps.Ollang.Constants;
 using Blackbird.Applications.Sdk.Common.Dictionaries;
 using Blackbird.Applications.Sdk.Common.Dynamic;
 
@@ -26,6 +27,7 @@ public class OrderDocumentTypeDataSourceHandler : IStaticDataSourceItemHandler
         new("translator_document", "Translator document"),
         new("guideline", "Guideline"),
         new("character_list", "Character list"),
-        new("guideline_glossary", "Glossary")
+        new("guideline_glossary", "Glossary"),
+        new("on_screen_text_xlsx", "On-screen text XLSX")
     ];
 }
