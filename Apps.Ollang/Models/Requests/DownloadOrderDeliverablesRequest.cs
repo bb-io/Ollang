@@ -16,7 +16,7 @@ public class DownloadOrderDeliverablesRequest
     [StaticDataSource(typeof(OrderDocumentTypeDataSourceHandler))]
     public IEnumerable<string>? DocumentTypes { get; set; }
 
-    [Display("Name contains", Description = "Only include documents whose name contains this text.")]
+    [Display("Name contains", Description = "Include documents whose name contains this text. When document types are selected, documents matching either criterion are included.")]
     public string? NameContains { get; set; }
 
     [Display("Language")]

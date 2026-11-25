@@ -100,4 +100,39 @@ public class ActionTests : TestBase
         });
         Assert.IsFalse(string.IsNullOrWhiteSpace(folderDocument.Id));
     }
+
+    [TestMethod]
+    public async Task Download_order_deliverables_returns_all_selected_document_types()
+    {
+        string[] selectedDocumentTypes =
+        [
+            "created_ai_dub_vocals_only_audio",
+            "created_embedded_video",
+            "on_screen_text_xlsx"
+        ];
+        var input = new DownloadOrderDeliverablesRequest
+        {
+            OrderId = "6adb70a7677783f70447a217",
+            DocumentTypes = selectedDocumentTypes,
+            //NameContains = ".srt",
+            IncludeSubtitleEmbeddedVideo = true
+        };
+        var actions = new FileActions(InvocationContext, FileManager);
+
+        var result = await actions.DownloadOrderDeliverables(input);
+        PrintJsonResult(result);
+
+        var returnedDocumentTypes = result.Deliverables
+            .Select(deliverable => deliverable.DocumentType)
+            .Where(documentType => !string.IsNullOrWhiteSpace(documentType))
+            .Cast<string>()
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (var selectedDocumentType in selectedDocumentTypes)
+        {
+            Assert.IsTrue(
+                returnedDocumentTypes.Contains(selectedDocumentType),
+                $"The action did not return selected document type '{selectedDocumentType}'.");
+        }
+        Assert.AreEqual(selectedDocumentTypes.Length, result.Deliverables.Count);
+    }
 }
