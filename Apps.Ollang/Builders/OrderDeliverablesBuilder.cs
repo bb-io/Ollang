@@ -71,21 +71,12 @@ public static class OrderDeliverablesBuilder
         OrderResponse order,
         DownloadOrderDeliverablesRequest input)
     {
-        if (input.IncludeVtt == true && !string.IsNullOrWhiteSpace(order.VttUrl))
-        {
-            var baseName = FileHelper.SanitizeFileName(order.Name ?? order.OrderId);
-            var vttName = string.Equals(Path.GetExtension(baseName), ".vtt", StringComparison.OrdinalIgnoreCase)
-                ? baseName
-                : $"{baseName}.vtt";
-            var file = CreateSignedFileReference(order.VttUrl, vttName);
-            deliverables.Add(new DeliverableFileResponse
-            {
-                File = file,
-                Name = vttName,
-                DocumentType = "vtt",
-                Language = order.TargetLanguage
-            });
-        }
+        var documentTypes = (input.DocumentTypes ?? [])
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (documentTypes.Contains("vtt"))
+            AddSubtitleDeliverable(deliverables, order, order.VttUrl, "vtt");
+        if (documentTypes.Contains("srt"))
+            AddSubtitleDeliverable(deliverables, order, order.SrtUrl, "srt");
 
         var embeddedVideoUrl = order.DeliveryFiles?.VideoWithBurnedInSubtitlesUrl;
         var embeddedVideoAlreadyIncluded = documents.Any(IsSubtitleEmbeddedVideo);
@@ -104,6 +95,30 @@ public static class OrderDeliverablesBuilder
                 Language = order.TargetLanguage
             });
         }
+    }
+
+    private static void AddSubtitleDeliverable(
+        List<DeliverableFileResponse> deliverables,
+        OrderResponse order,
+        string? url,
+        string documentType)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+            return;
+
+        var baseName = FileHelper.SanitizeFileName(order.Name ?? order.OrderId);
+        var extension = $".{documentType}";
+        var fileName = string.Equals(Path.GetExtension(baseName), extension, StringComparison.OrdinalIgnoreCase)
+            ? baseName
+            : $"{baseName}{extension}";
+        var file = CreateSignedFileReference(url, fileName);
+        deliverables.Add(new DeliverableFileResponse
+        {
+            File = file,
+            Name = fileName,
+            DocumentType = documentType,
+            Language = order.TargetLanguage
+        });
     }
 
     private static bool IsSubtitleEmbeddedVideo(OrderDocumentResponse document) =>

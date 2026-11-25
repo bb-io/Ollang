@@ -34,7 +34,7 @@ Ollang uses the production Integration API at `https://api-integration.ollang.co
 - **Upload source file** uploads a source asset and returns the ID of the newly created Ollang project. The optional folder input lets you create it inside an existing folder.
 - **Upload VTT file** attaches a `.vtt` subtitle file to an existing project.
 - **Upload reference document** uploads a glossary, guideline, or character list to either a project or a folder. Select the destination and provide the corresponding project or folder ID.
-- **Download order deliverables** downloads order documents using optional type, name, and language filters, can include the VTT file, and supports exporting visual translation rows as an on-screen text XLSX file.
+- **Download order deliverables** downloads order documents using optional type, name, and language filters, can include SRT and VTT subtitle files when their URLs are available, and supports exporting visual translation rows as an on-screen text XLSX file.
 
 ### Quality control
 
