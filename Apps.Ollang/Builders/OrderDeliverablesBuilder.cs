@@ -27,20 +27,24 @@ public static class OrderDeliverablesBuilder
         OrderResponse order,
         DownloadOrderDeliverablesRequest input)
     {
-        var outputDocuments = order.DeliveryFiles?.Outputs is { Count: > 0 }
-            ? order.DeliveryFiles.Outputs
-            : order.OrderDocs;
         var documentTypes = (input.DocumentTypes ?? [])
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        return outputDocuments
+        return (order.DeliveryFiles?.Outputs ?? [])
+            .Concat(order.OrderDocs)
             .Where(document => MatchesDocumentFilters(
                 document,
                 input,
                 documentTypes,
                 order.TargetLanguage))
+            .DistinctBy(GetDocumentIdentity, StringComparer.OrdinalIgnoreCase)
             .ToList();
     }
+
+    private static string GetDocumentIdentity(OrderDocumentResponse document) =>
+        !string.IsNullOrWhiteSpace(document.Id)
+            ? $"id:{document.Id}"
+            : $"url:{document.Url}";
 
     private static DeliverableFileResponse CreateDocumentDeliverable(
         OrderDocumentResponse document,
@@ -67,21 +71,12 @@ public static class OrderDeliverablesBuilder
         OrderResponse order,
         DownloadOrderDeliverablesRequest input)
     {
-        if (input.IncludeVtt == true && !string.IsNullOrWhiteSpace(order.VttUrl))
-        {
-            var baseName = FileHelper.SanitizeFileName(order.Name ?? order.OrderId);
-            var vttName = string.Equals(Path.GetExtension(baseName), ".vtt", StringComparison.OrdinalIgnoreCase)
-                ? baseName
-                : $"{baseName}.vtt";
-            var file = CreateSignedFileReference(order.VttUrl, vttName);
-            deliverables.Add(new DeliverableFileResponse
-            {
-                File = file,
-                Name = vttName,
-                DocumentType = "vtt",
-                Language = order.TargetLanguage
-            });
-        }
+        var documentTypes = (input.DocumentTypes ?? [])
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (documentTypes.Contains("vtt"))
+            AddSubtitleDeliverable(deliverables, order, order.VttUrl, "vtt");
+        if (documentTypes.Contains("srt"))
+            AddSubtitleDeliverable(deliverables, order, order.SrtUrl, "srt");
 
         var embeddedVideoUrl = order.DeliveryFiles?.VideoWithBurnedInSubtitlesUrl;
         var embeddedVideoAlreadyIncluded = documents.Any(IsSubtitleEmbeddedVideo);
@@ -102,6 +97,30 @@ public static class OrderDeliverablesBuilder
         }
     }
 
+    private static void AddSubtitleDeliverable(
+        List<DeliverableFileResponse> deliverables,
+        OrderResponse order,
+        string? url,
+        string documentType)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+            return;
+
+        var baseName = FileHelper.SanitizeFileName(order.Name ?? order.OrderId);
+        var extension = $".{documentType}";
+        var fileName = string.Equals(Path.GetExtension(baseName), extension, StringComparison.OrdinalIgnoreCase)
+            ? baseName
+            : $"{baseName}{extension}";
+        var file = CreateSignedFileReference(url, fileName);
+        deliverables.Add(new DeliverableFileResponse
+        {
+            File = file,
+            Name = fileName,
+            DocumentType = documentType,
+            Language = order.TargetLanguage
+        });
+    }
+
     private static bool IsSubtitleEmbeddedVideo(OrderDocumentResponse document) =>
         string.Equals(
             document.Type,
@@ -115,14 +134,28 @@ public static class OrderDeliverablesBuilder
         string? targetLanguage) =>
         !string.IsNullOrWhiteSpace(document.Url) &&
         (!IsSubtitleEmbeddedVideo(document) || input.IncludeSubtitleEmbeddedVideo == true) &&
-        (documentTypes.Count == 0 || documentTypes.Contains(document.Type ?? string.Empty)) &&
-        (string.IsNullOrWhiteSpace(input.NameContains) ||
-         (document.Name?.Contains(input.NameContains, StringComparison.OrdinalIgnoreCase) ?? false)) &&
+        MatchesDocumentSelection(document, input.NameContains, documentTypes) &&
         (string.IsNullOrWhiteSpace(input.Language) ||
          string.Equals(
              document.SourceLanguage ?? targetLanguage,
              input.Language,
              StringComparison.OrdinalIgnoreCase));
+
+    private static bool MatchesDocumentSelection(
+        OrderDocumentResponse document,
+        string? nameContains,
+        HashSet<string> documentTypes)
+    {
+        var hasTypeFilter = documentTypes.Count > 0;
+        var hasNameFilter = !string.IsNullOrWhiteSpace(nameContains);
+        if (!hasTypeFilter && !hasNameFilter)
+            return true;
+
+        var matchesType = hasTypeFilter && documentTypes.Contains(document.Type ?? string.Empty);
+        var matchesName = hasNameFilter &&
+            (document.Name?.Contains(nameContains!, StringComparison.OrdinalIgnoreCase) ?? false);
+        return matchesType || matchesName;
+    }
 
     private static FileReference CreateSignedFileReference(
         string url,

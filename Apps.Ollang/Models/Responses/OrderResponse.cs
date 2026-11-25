@@ -42,6 +42,9 @@ public class OrderResponse
     [Display("VTT URL", Description = "Signed VTT download URL when available.")]
     public string? VttUrl { get; set; }
 
+    [Display("SRT URL", Description = "Signed SRT download URL when available.")]
+    public string? SrtUrl { get; set; }
+
     [Display("Documents")]
     public List<OrderDocumentResponse> OrderDocs { get; set; } = [];
 

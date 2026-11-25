@@ -28,6 +28,8 @@ public class OrderDocumentTypeDataSourceHandler : IStaticDataSourceItemHandler
         new("guideline", "Guideline"),
         new("character_list", "Character list"),
         new("guideline_glossary", "Glossary"),
+        new("srt", "SRT subtitles"),
+        new("vtt", "VTT subtitles"),
         new("on_screen_text_xlsx", "On-screen text XLSX")
     ];
 }
